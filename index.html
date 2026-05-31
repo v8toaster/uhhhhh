@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hold the Line</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131c;
+    --border: #2a2a3d;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --text: #f0f0ff;
+    --muted: #6b6b88;
+    --danger: #ff3b5c;
+    --safe: #47ffa0;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.4s ease;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; }
+
+  /* ── START SCREEN ── */
+  #start-screen {
+    gap: 0;
+    background: var(--bg);
+  }
+
+  .title-block {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .game-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 18vw, 9rem);
+    line-height: 0.9;
+    letter-spacing: 0.04em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .game-subtitle {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+  }
+
+  .rule-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    max-width: 340px;
+    width: 90%;
+    margin-bottom: 2.5rem;
+  }
+
+  .rule-card p {
+    font-size: 0.78rem;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+
+  .rule-card .highlight {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .start-btn {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.1em;
+    padding: 0.6rem 3rem;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 0 30px rgba(232,255,71,0.3);
+  }
+  .start-btn:active { transform: scale(0.96); box-shadow: none; }
+
+  /* ── COUNTDOWN SCREEN ── */
+  #countdown-screen {
+    background: var(--bg);
+    gap: 1rem;
+  }
+
+  .countdown-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(8rem, 40vw, 18rem);
+    line-height: 1;
+    color: var(--accent);
+    text-shadow: 0 0 60px rgba(232,255,71,0.4);
+    transition: all 0.15s ease;
+  }
+
+  .countdown-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ── GAME SCREEN ── */
+  #game-screen {
+    flex-direction: row;
+    gap: 0;
+    background: var(--bg);
+    padding: 0;
+    justify-content: center;
+    align-items: stretch;
+  }
+
+  .left-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 1rem;
+    flex: 1;
+    max-width: 160px;
+  }
+
+  .hud-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    text-align: center;
+    width: 100%;
+  }
+
+  .hud-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .hud-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  #timer-val { color: var(--accent2); }
+
+  .zone-indicator {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .zone-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    margin-right: 6px;
+    transition: background 0.2s;
+  }
+
+  /* ── METER ── */
+  .meter-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 0.5rem;
+    position: relative;
+  }
+
+  .meter-wrap {
+    position: relative;
+    width: 80px;
+    height: min(70vh, 520px);
+  }
+
+  .meter-track {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .meter-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, var(--accent2) 0%, var(--accent) 50%, var(--danger) 100%);
+    border-radius: 0 0 11px 11px;
+    transition: height 0.04s linear;
+  }
+
+  .sweet-zone {
+    position: absolute;
+    left: 0; right: 0;
+    background: rgba(71,255,160,0.15);
+    border-top: 1px solid rgba(71,255,160,0.5);
+    border-bottom: 1px solid rgba(71,255,160,0.5);
+  }
+
+  .pointer {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%) translateY(50%);
+    width: 60px;
+    height: 14px;
+    transition: bottom 0.04s linear;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pointer-line {
+    flex: 1;
+    height: 2px;
+    background: white;
+  }
+
+  .pointer-diamond {
+    width: 10px;
+    height: 10px;
+    background: white;
+    transform: rotate(45deg);
+    flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(255,255,255,0.8);
+  }
+
+  .tick-marks {
+    position: absolute;
+    right: -28px;
+    top: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .tick {
+    font-size: 0.55rem;
+    color: var(--muted);
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
+  .tick-50 { color: var(--safe) !important; font-weight: 700; }
+
+  /* ── BUTTONS ── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1rem;
+    gap: 1rem;
+    flex: 1;
+    max-width: 160px;
+  }
+
+  .tap-btn {
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 120px;
+    border-radius: 16px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: transform 0.07s, border-color 0.07s, background 0.07s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .tap-btn svg {
+    width: 32px;
+    height: 32px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .tap-btn:active,
+  .tap-btn.pressed {
+    transform: scale(0.92);
+    border-color: var(--accent);
+    background: rgba(232,255,71,0.08);
+  }
+
+  .btn-a { border-color: rgba(232,255,71,0.3); }
+  .btn-b { border-color: rgba(255,107,53,0.3); }
+
+  /* ── END SCREEN ── */
+  #end-screen {
+    background: var(--bg);
+    gap: 1rem;
+  }
+
+  .end-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 10vw, 5rem);
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  .score-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 22vw, 10rem);
+    line-height: 0.9;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .score-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .grade {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    color: var(--safe);
+    letter-spacing: 0.2em;
+    margin: 0.5rem 0;
+  }
+
+  .restart-btn {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.75rem 2.5rem;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background 0.15s;
+  }
+  .restart-btn:hover { background: rgba(232,255,71,0.1); }
+
+  .scanline {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* pulse animation when in sweet zone */
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(71,255,160,0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(71,255,160,0); }
+  }
+  .in-zone { animation: pulse-border 0.8s ease-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- START -->
+<div class="screen" id="start-screen">
+  <div class="title-block">
+    <div class="game-title">Hold<br>The<br>Line</div>
+    <div class="game-subtitle">a precision endurance game</div>
+  </div>
+  <div class="rule-card">
+    <p>
+      Tap the buttons to push the meter pointer <span class="highlight">UP</span>.<br><br>
+      The pointer falls back down on its own — keep tapping.<br><br>
+      Stay near <span class="highlight">50%</span> for as long as possible.<br><br>
+      Score is based on how close &amp; how long you hold the sweet zone. <span class="highlight">60 seconds.</span>
+    </p>
+  </div>
+  <button class="start-btn" id="start-btn">START</button>
+</div>
+
+<!-- COUNTDOWN -->
+<div class="screen hidden" id="countdown-screen">
+  <div class="countdown-num" id="countdown-num">3</div>
+  <div class="countdown-label">get ready</div>
+</div>
+
+<!-- GAME -->
+<div class="screen hidden" id="game-screen">
+  <div class="left-panel">
+    <div class="hud-box">
+      <span class="hud-label">Score</span>
+      <span class="hud-value" id="score-val">0</span>
+    </div>
+    <div>
+      <div class="zone-dot" id="zone-dot"></div>
+      <span class="zone-indicator" id="zone-label">OUT OF ZONE</span>
+    </div>
+    <div class="hud-box">
+      <span class="hud-label">Time</span>
+      <span class="hud-value" id="timer-val">60</span>
+    </div>
+  </div>
+
+  <div class="meter-panel">
+    <div class="meter-wrap">
+      <div class="meter-track" id="meter-track">
+        <div class="meter-fill" id="meter-fill"></div>
+        <div class="sweet-zone" id="sweet-zone"></div>
+      </div>
+      <div class="pointer" id="pointer">
+        <div class="pointer-line"></div>
+        <div class="pointer-diamond"></div>
+        <div class="pointer-line"></div>
+      </div>
+      <div class="tick-marks">
+        <span class="tick">100</span>
+        <span class="tick">75</span>
+        <span class="tick tick-50">50</span>
+        <span class="tick">25</span>
+        <span class="tick">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <button class="tap-btn btn-a" id="btn-a" aria-label="Tap A to raise meter">
+      <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+      TAP A
+    </button>
+    <button class="tap-btn btn-b" id="btn-b" aria-label="Tap B to raise meter">
+      <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+      TAP B
+    </button>
+  </div>
+</div>
+
+<!-- END -->
+<div class="screen hidden" id="end-screen">
+  <div class="end-title">Time's Up!</div>
+  <div class="score-label">Your Score</div>
+  <div class="score-display" id="final-score">0</div>
+  <div class="grade" id="grade-label"></div>
+  <button class="restart-btn" id="restart-btn">Play Again</button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const GAME_DURATION = 60;
+const SWEET_LOW = 40, SWEET_HIGH = 60; // percent
+const SWEET_CENTER = 50;
+const FALL_RATE = 12;    // % per second passive fall
+const BOOST = 8;         // % per tap
+
+let level = 0;
+let score = 0;
+let timeLeft = GAME_DURATION;
+let gameActive = false;
+let lastTimestamp = null;
+let animId = null;
+
+function setScreen(id) {
+  ['start-screen','countdown-screen','game-screen','end-screen'].forEach(s => {
+    $(s).classList.toggle('hidden', s !== id);
+  });
+}
+
+// ── COUNTDOWN ──
+function runCountdown(cb) {
+  setScreen('countdown-screen');
+  const steps = ['3','2','1','GO!'];
+  let i = 0;
+  const show = () => {
+    if (i >= steps.length) { cb(); return; }
+    const el = $('countdown-num');
+    el.textContent = steps[i];
+    el.style.color = i === steps.length - 1 ? 'var(--safe)' : 'var(--accent)';
+    el.style.transform = 'scale(1.2)';
+    setTimeout(() => { el.style.transform = 'scale(1)'; }, 80);
+    i++;
+    setTimeout(show, 700);
+  };
+  show();
+}
+
+// ── METER UI ──
+function updateMeterUI() {
+  const pct = Math.max(0, Math.min(100, level));
+  const trackH = $('meter-track').clientHeight;
+
+  $('meter-fill').style.height = pct + '%';
+  $('pointer').style.bottom = `calc(${pct}% - 7px)`;
+
+  // Sweet zone band
+  const sz = $('sweet-zone');
+  sz.style.bottom = SWEET_LOW + '%';
+  sz.style.height = (SWEET_HIGH - SWEET_LOW) + '%';
+
+  // Zone indicator
+  const inZone = pct >= SWEET_LOW && pct <= SWEET_HIGH;
+  $('zone-dot').style.background = inZone ? 'var(--safe)' : 'var(--muted)';
+  $('zone-label').textContent = inZone ? 'IN ZONE ✓' : 'OUT OF ZONE';
+  $('zone-label').style.color = inZone ? 'var(--safe)' : 'var(--muted)';
+
+  const mt = $('meter-track');
+  if (inZone) mt.classList.add('in-zone');
+  else mt.classList.remove('in-zone');
+}
+
+// ── GAME LOOP ──
+function gameLoop(ts) {
+  if (!gameActive) return;
+  if (!lastTimestamp) lastTimestamp = ts;
+  const dt = (ts - lastTimestamp) / 1000;
+  lastTimestamp = ts;
+
+  level = Math.max(0, level - FALL_RATE * dt);
+  timeLeft = Math.max(0, timeLeft - dt);
+
+  // Scoring: points per frame based on distance from 50
+  if (gameActive) {
+    const pct = Math.max(0, Math.min(100, level));
+    const inZone = pct >= SWEET_LOW && pct <= SWEET_HIGH;
+    if (inZone) {
+      const dist = Math.abs(pct - SWEET_CENTER);
+      const proximity = 1 - dist / (SWEET_HIGH - SWEET_CENTER);
+      score += proximity * 15 * dt;
+    }
+  }
+
+  $('score-val').textContent = Math.floor(score);
+  $('timer-val').textContent = Math.ceil(timeLeft);
+  updateMeterUI();
+
+  if (timeLeft <= 0) {
+    endGame();
+    return;
+  }
+
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function tap() {
+  if (!gameActive) return;
+  level = Math.min(100, level + BOOST);
+}
+
+function startGame() {
+  level = 0;
+  score = 0;
+  timeLeft = GAME_DURATION;
+  lastTimestamp = null;
+  gameActive = true;
+  setScreen('game-screen');
+  updateMeterUI();
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  gameActive = false;
+  cancelAnimationFrame(animId);
+  const finalScore = Math.floor(score);
+  $('final-score').textContent = finalScore;
+
+  let grade = '';
+  if (finalScore >= 700) grade = '★ LEGENDARY ★';
+  else if (finalScore >= 550) grade = 'MASTER';
+  else if (finalScore >= 400) grade = 'EXPERT';
+  else if (finalScore >= 250) grade = 'DECENT';
+  else if (finalScore >= 100) grade = 'NEEDS WORK';
+  else grade = 'KEEP TRYING';
+  $('grade-label').textContent = grade;
+
+  setScreen('end-screen');
+}
+
+// ── BUTTON FEEDBACK ──
+function addTapFeedback(btn, tapFn) {
+  const flash = () => {
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 120);
+  };
+  btn.addEventListener('pointerdown', e => { e.preventDefault(); tapFn(); flash(); });
+  btn.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+}
+
+// ── EVENTS ──
+$('start-btn').addEventListener('click', () => {
+  runCountdown(() => startGame());
+});
+
+addTapFeedback($('btn-a'), tap);
+addTapFeedback($('btn-b'), tap);
+
+// keyboard support
+document.addEventListener('keydown', e => {
+  if (!gameActive) return;
+  if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') tap();
+  if (e.key === 'b' || e.key === 'B' || e.key === 'ArrowRight') tap();
+  if (e.key === ' ') { e.preventDefault(); tap(); }
+});
+
+$('restart-btn').addEventListener('click', () => {
+  runCountdown(() => startGame());
+});
+</script>
+</body>
+</html>
